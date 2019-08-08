@@ -11,7 +11,7 @@ def define_bnn(n_node=15, n_layer=1,
                activation=tf.nn.relu,
                hidden_weight_sd=0.1,
                output_weight_sd=None,
-               compute_bias=False):
+               compute_bias=False, **kwargs):
     """Generates a model function for BNN regression model.
 
     Adapted from below Colab:
@@ -30,6 +30,7 @@ def define_bnn(n_node=15, n_layer=1,
         activation: (function) An activation function. Default to ReLU
         hidden_weight_sd: (float) Standard deviation for the hidden weight prior.
         output_weight_sd: (float) Standard deviation for the output weight prior.
+        kwargs: additional keywork arguments for compatibility purpose.
 
     Returns:
         model (function): A function that returns a output node.

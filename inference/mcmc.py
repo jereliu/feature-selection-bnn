@@ -33,8 +33,8 @@ def sample_parameter(sample_op, is_accepted_op, rv_names, mcmc_graph):
         (samples_val, is_accepted_val) = mcmc_sess.run([sample_op, is_accepted_op])
 
         total_min = (time.time() - time_start) / 60.
-        print('Acceptance Rate: {}'.format(np.mean(is_accepted_val)))
-        print('Total time: {:.2f} min'.format(total_min))
+        print('\tAcceptance Rate: {}'.format(np.mean(is_accepted_val)))
+        print('\tTotal time: {:.2f} min'.format(total_min))
 
     return dict(zip(rv_names, samples_val))
 
