@@ -6,12 +6,13 @@ import numpy as np
 import util.dtype as dtype_util
 
 
-def data_gen_func_linear(X, d_true, random_seed=100):
+def data_gen_func_linear(X, d_true, snr=2, random_seed=100):
     """A Linear Function to generates toy data for training.
 
     Args:
         X: (np.ndarray) A matrix of input features
         d_true: (int)  Number of real input features
+        snr: (float) Signal-to-noise ratio of the true function.
         random_seed: (int) Random seed to set for data generation.
 
     Returns:
@@ -26,13 +27,16 @@ def data_gen_func_linear(X, d_true, random_seed=100):
     X_true = X[:, :d_true]
     linear_coef = np.random.normal(loc=1., scale=.25, size=d_true)
 
-    # produce output
+    # produce function
     f = X_true.dot(linear_coef)
+
+    snr_adjust = snr / np.std(f)
+    f = snr_adjust * f
     y = f + np.random.normal(0., 1., size=n)
 
     # produce variable importance
     var_imp = np.zeros(shape=(d,))
-    var_imp[:d_true] = linear_coef ** 2
+    var_imp[:d_true] = (snr_adjust * linear_coef) ** 2
 
     return y, f, var_imp
 
