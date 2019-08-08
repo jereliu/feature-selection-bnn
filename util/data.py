@@ -41,13 +41,15 @@ def data_gen_func_linear(X, d_true, snr=2, random_seed=100):
     return y, f, var_imp
 
 
-def generate_data(n=1000, d=10, d_true=5,
+def generate_data(n=1000, n_test=1000,
+                  d=10, d_true=5,
                   data_gen_func=data_gen_func_linear,
                   random_seed_x=None, random_seed_f=None):
     """Generates toy data for training.
 
     Args:
         n: (int) Number of observations
+        n_test: (int) Number of testing observations.
         d: (int) Number of Input Features
         d_true: (int)  Number of Real Input Features.
         data_gen_func: (function) A function that takes in feature, d_true, and
@@ -56,9 +58,13 @@ def generate_data(n=1000, d=10, d_true=5,
         random_seed_y: (int) Random seed for generating response.
 
     Returns:
-        y: (np.ndarray of NP_DTYPE) A vector of response, shape (n, )
-        X: (np.ndarray of NP_DTYPE)  A matrix of input features between (0, 1),
+        y_train: (np.ndarray of NP_DTYPE) A vector of response, shape (n, )
+        X_train: (np.ndarray of NP_DTYPE)  A matrix of input features between (0, 1),
             shape (n, d).
+        f_test: (np.ndarray of NP_DTYPE) A vector of response, shape (n_test, )
+        X_test: (np.ndarray of NP_DTYPE)  A matrix of input features between (0, 1),
+            shape (n_test, d).
+
         variable_importance: (np.ndarray of NP_DTYPE)
             A vector of variable Importance for each input features, shape (d, )
 
@@ -76,7 +82,7 @@ def generate_data(n=1000, d=10, d_true=5,
 
     # generate features
     np.random.seed(random_seed_x)
-    X = np.random.uniform(0., 1., size=(n, d))
+    X = np.random.uniform(0., 1., size=(n + n_test, d))
 
     # generate data, standardize, and convert data type
     y, f, var_imp = data_gen_func(X, d_true, random_seed=random_seed_f)
@@ -85,6 +91,13 @@ def generate_data(n=1000, d=10, d_true=5,
 
     y = y.astype(dtype_util.NP_DTYPE)
     X = X.astype(dtype_util.NP_DTYPE)
+
+    X_train = X[:n, :]
+    y_train = y[:n]
+
+    X_test = X[n + 1:, :]
+    f_test = f[(n + 1):]
+
     var_imp = var_imp.astype(dtype_util.NP_DTYPE)
 
-    return y, X, f, var_imp
+    return y_train, X_train, f_test, X_test, var_imp

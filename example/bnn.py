@@ -32,8 +32,14 @@ WEIGHT_PRIOR_SD = np.sqrt(.1).astype(dtype_util.NP_DTYPE)
 # if __name__ == "__main__":
 logdir = "./tmp/"
 
-n_train = 1000
-n_feature = 50
+config = {"n_train": 1000, "n_feature": 50,
+          "n_node": 50, "n_layer": 2,
+          "hidden_weight_sd": np.sqrt(.1).astype(dtype_util.NP_DTYPE),
+          "output_weight_sd": .1}
+
+
+n_train = 100
+n_feature = 100
 n_feature_true = 5
 
 num_sample = int(5e3)
@@ -45,12 +51,12 @@ model_config = {"n_node": 50, "n_layer": 2,
                 "output_weight_sd": .1}
 
 # generate training data
-(y_train, X_train,
- f_train, true_var_imp) = data_util.generate_data(n=n_train,
-                                                  d=n_feature,
-                                                  d_true=n_feature_true,
-                                                  data_gen_func=data_util.data_gen_func_linear,
-                                                  random_seed_f=50)
+(y_train, X_train, f_test, X_test,
+ true_var_imp) = data_util.generate_data(n=n_train,
+                                         d=n_feature,
+                                         d_true=n_feature_true,
+                                         data_gen_func=data_util.data_gen_func_linear,
+                                         random_seed_f=50)
 
 # 1. Build Model and Inference Graph ################
 (param_samples, is_accepted, param_names,
@@ -65,17 +71,18 @@ param_sample_dict = mcmc.sample_parameter(param_samples, is_accepted,
 (pred_sample, imp_sample,
  bias_samples) = mcmc.sample_predictive(num_pred_sample,
                                         param_sample_dict,
-                                        model_fn, X_train)
+                                        model_fn, X_test)
 
 # 4. Evaluate Model Fit ################
-# check in-sample predictive accuracy
 posterior_mean = np.mean(pred_sample, 0)
-plt.scatter(posterior_mean, f_train)
-plt.plot(np.arange(np.min(f_train), np.max(f_train), 0.1),
-         np.arange(np.min(f_train), np.max(f_train), 0.1), c='orange')
+var_imp_mean = np.mean(imp_sample, 0)
+
+print("predict MSE:{:4f}".format(np.mean((posterior_mean - f_test)**2)))
+print("var_imp MSE:{:4f}".format(np.mean((var_imp_mean - true_var_imp)**2)))
+
 
 # produce pandas data frame for plotting
-n_feature_plot = 50  # n_feature
+n_feature_plot = 100  # n_feature
 feature_names = ["x_{}".format(p) for p in range(n_feature_plot)]
 var_imp_data = pd.DataFrame(
     {"feature": np.tile(feature_names, num_pred_sample),
@@ -84,3 +91,9 @@ var_imp_data = pd.DataFrame(
 sns.violinplot(x="feature", y="importance", data=var_imp_data)
 plt.scatter(x=range(n_feature_plot),
             y=true_var_imp[:n_feature_plot], c="red")
+
+# check in-sample predictive accuracy
+plt.scatter(posterior_mean, f_test)
+plt.plot(np.arange(np.min(f_test), np.max(f_test), 0.1),
+         np.arange(np.min(f_test), np.max(f_test), 0.1), c='orange')
+
