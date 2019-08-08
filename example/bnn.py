@@ -12,7 +12,6 @@ then in browser, go to:
 from importlib import reload
 
 import numpy as np
-import pandas as pd
 
 import tensorflow_probability as tfp
 
@@ -20,10 +19,8 @@ import inference.mcmc as mcmc
 
 import util.data as data_util
 import util.dtype as dtype_util
+import util.visual as visual_util
 import util.experiment as exp_util
-
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 tfd = tfp.distributions
 
@@ -32,14 +29,13 @@ WEIGHT_PRIOR_SD = np.sqrt(.1).astype(dtype_util.NP_DTYPE)
 # if __name__ == "__main__":
 logdir = "./tmp/"
 
-config = {"n_train": 1000, "n_feature": 50,
+config = {"n_train": 1000, "n_feature": 100,
           "n_node": 50, "n_layer": 2,
           "hidden_weight_sd": np.sqrt(.1).astype(dtype_util.NP_DTYPE),
           "output_weight_sd": .1}
 
-
 n_train = 100
-n_feature = 100
+n_feature = 50
 n_feature_true = 5
 
 num_sample = int(5e3)
@@ -74,26 +70,12 @@ param_sample_dict = mcmc.sample_parameter(param_samples, is_accepted,
                                         model_fn, X_test)
 
 # 4. Evaluate Model Fit ################
-posterior_mean = np.mean(pred_sample, 0)
+pred_mean = np.mean(pred_sample, 0)
 var_imp_mean = np.mean(imp_sample, 0)
 
-print("predict MSE:{:4f}".format(np.mean((posterior_mean - f_test)**2)))
-print("var_imp MSE:{:4f}".format(np.mean((var_imp_mean - true_var_imp)**2)))
+print("predict MSE:{:4f}".format(np.mean((pred_mean - f_test) ** 2)))
+print("var_imp MSE:{:4f}".format(np.mean((var_imp_mean - true_var_imp) ** 2)))
 
-
-# produce pandas data frame for plotting
-n_feature_plot = 100  # n_feature
-feature_names = ["x_{}".format(p) for p in range(n_feature_plot)]
-var_imp_data = pd.DataFrame(
-    {"feature": np.tile(feature_names, num_pred_sample),
-     "importance": np.hstack(imp_sample[:, :n_feature_plot])})
-
-sns.violinplot(x="feature", y="importance", data=var_imp_data)
-plt.scatter(x=range(n_feature_plot),
-            y=true_var_imp[:n_feature_plot], c="red")
-
-# check in-sample predictive accuracy
-plt.scatter(posterior_mean, f_test)
-plt.plot(np.arange(np.min(f_test), np.max(f_test), 0.1),
-         np.arange(np.min(f_test), np.max(f_test), 0.1), c='orange')
-
+# optionally, visualize
+visual_util.plot_var_imp(imp_sample, f_test, n_variable=50)
+visual_util.plot_prediction(pred_sample, f_test)
