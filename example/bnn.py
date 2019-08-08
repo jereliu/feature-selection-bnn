@@ -27,13 +27,13 @@ import matplotlib.pyplot as plt
 
 tfd = tfp.distributions
 
-WEIGHT_PRIOR_SD = np.sqrt(.005).astype(dtype_util.NP_DTYPE)
+WEIGHT_PRIOR_SD = np.sqrt(.1).astype(dtype_util.NP_DTYPE)
 
 # if __name__ == "__main__":
 logdir = "./tmp/"
 
 n_train = 1000
-n_feature = 250
+n_feature = 50
 n_feature_true = 5
 
 num_sample = int(5e3)
@@ -41,7 +41,8 @@ num_burnin = int(1e4)
 num_pred_sample = 250
 
 model_config = {"n_node": 50, "n_layer": 2,
-                "weight_prior_sd": WEIGHT_PRIOR_SD}
+                "hidden_weight_sd": WEIGHT_PRIOR_SD,
+                "output_weight_sd": .1}
 
 # generate training data
 (y_train, X_train,
@@ -52,7 +53,6 @@ model_config = {"n_node": 50, "n_layer": 2,
                                                   random_seed_f=50)
 
 # 1. Build Model and Inference Graph ################
-
 (param_samples, is_accepted, param_names,
  model_fn, mcmc_graph) = exp_util.make_bnn_graph(X_train, y_train,
                                                  num_sample, num_burnin,
@@ -71,7 +71,8 @@ param_sample_dict = mcmc.sample_parameter(param_samples, is_accepted,
 # check in-sample predictive accuracy
 posterior_mean = np.mean(pred_sample, 0)
 plt.scatter(posterior_mean, f_train)
-plt.plot(np.arange(-2, 2, 0.1), np.arange(-2, 2, 0.1), c='orange')
+plt.plot(np.arange(np.min(f_train), np.max(f_train), 0.1),
+         np.arange(np.min(f_train), np.max(f_train), 0.1), c='orange')
 
 # produce pandas data frame for plotting
 n_feature_plot = 50  # n_feature
