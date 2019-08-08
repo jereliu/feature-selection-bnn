@@ -41,10 +41,13 @@ def data_gen_func_linear(X, d_true, snr=2, random_seed=100):
     return y, f, var_imp
 
 
+data_func_dict = {"linear": data_gen_func_linear, }
+
+
 def generate_data(n=1000, n_test=1000,
                   d=10, d_true=5,
-                  data_gen_func=data_gen_func_linear,
-                  random_seed_x=None, random_seed_f=None):
+                  data_gen_func="linear",
+                  random_seed_x=None, random_seed_f=None, **kwargs):
     """Generates toy data for training.
 
     Args:
@@ -56,6 +59,7 @@ def generate_data(n=1000, n_test=1000,
             return  (y, variable_importance)
         random_seed_x: (int) Random seed for generating features.
         random_seed_y: (int) Random seed for generating response.
+        **kwargs: Additional keyword arguments.
 
     Returns:
         y_train: (np.ndarray of NP_DTYPE) A vector of response, shape (n, )
@@ -72,6 +76,7 @@ def generate_data(n=1000, n_test=1000,
         (ValueError): If d_true >= d
         (ValueError): If signature of data_gen_func doesn't contain 'X' and 'd_true'
     """
+    data_gen_func = data_func_dict[data_gen_func]
 
     if d_true >= d:
         raise ValueError("d_true cannot be greater than d.")

@@ -1,4 +1,5 @@
 """Utility functions for simulation experiments."""
+import datetime
 import tensorflow as tf
 
 import model.bnn as model
@@ -37,3 +38,17 @@ def make_bnn_graph(X, y, num_sample, num_burnin, **bnn_kwargs):
         bnn_graph.finalize()
 
     return param_samples, is_accepted, param_names, model_fn, bnn_graph
+
+
+def make_stamps(data_config, model_config):
+    time_stamp = datetime.datetime.now().strftime("%h%d_%H%M%S")
+    config_stamp = "n{}d{}_{}_l{}k{}".format(data_config['n'], data_config['d'],
+                                             data_config['data_gen_func'],
+                                             model_config['n_node'],
+                                             model_config['n_layer'])
+    config_detail = \
+        "n={}, d={}, {}, L={}, K={}".format(data_config['n'], data_config['d'],
+                                            data_config['data_gen_func'],
+                                            model_config['n_node'],
+                                            model_config['n_layer'])
+    return time_stamp, config_stamp, config_detail
