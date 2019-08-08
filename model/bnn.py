@@ -9,7 +9,8 @@ import util.dtype as dtype_util
 
 def define_bnn(n_node=15, n_layer=1,
                activation=tf.nn.relu,
-               weight_prior_sd=0.1,
+               hidden_weight_sd=0.1,
+               output_weight_sd=None,
                compute_bias=False):
     """Generates a model function for BNN regression model.
 
@@ -27,7 +28,8 @@ def define_bnn(n_node=15, n_layer=1,
         n_node: (int) Number of hidden nodes per layer.
         n_layer: (int) Number of hidden layers.
         activation: (function) An activation function. Default to ReLU
-        weight_prior_sd: (float) Standard deviation for the hidden weight prior.
+        hidden_weight_sd: (float) Standard deviation for the hidden weight prior.
+        output_weight_sd: (float) Standard deviation for the output weight prior.
 
     Returns:
         model (function): A function that returns a output node.
@@ -37,6 +39,9 @@ def define_bnn(n_node=15, n_layer=1,
     """
     if not isinstance(n_layer, int) or n_layer < 0:
         raise ValueError("'n_layer' must be a positive integer.")
+
+    if not output_weight_sd:
+        output_weight_sd = tf.sqrt(1/n_node)
 
     # define model
     def model(X):
@@ -58,6 +63,7 @@ def define_bnn(n_node=15, n_layer=1,
         Returns:
             (tf.Tensor) The output distribution.
         """
+
         # define architecture
         X = tf.convert_to_tensor(X, dtype=dtype_util.TF_DTYPE)
         n_sample, n_feature = X.shape.as_list()
@@ -84,10 +90,10 @@ def define_bnn(n_node=15, n_layer=1,
             with tf.variable_scope("layer_{}".format(layer_id), reuse=True):
                 # configure hidden weight
                 weight_shape = (layer_size[layer_id], layer_size[layer_id + 1])
-                weight_scale = weight_prior_sd  # if layer_id < n_layer else tf.sqrt(1/n_node)
+                weight_scale = hidden_weight_sd if layer_id < n_layer else output_weight_sd
 
                 # define random variables
-                bias_rv = ed.Normal(loc=0., scale=weight_prior_sd,
+                bias_rv = ed.Normal(loc=0., scale=hidden_weight_sd,
                                     name="bias_{}".format(layer_id))
                 weight_rv = ed.Normal(loc=0.,
                                       scale=tf.ones(shape=weight_shape) * weight_scale,
