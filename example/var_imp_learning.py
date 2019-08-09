@@ -134,8 +134,8 @@ if __name__ == "__main__":
     data_type_list = ["linear", "barron", "sobolev"][1:]
 
     for rep in range(EXPERIMENT_REPEAT):
-        for f_name in data_type_list:
-            data_config["data_type"] = f_name
+        for d_type in data_type_list:
+            data_config["data_type"] = d_type
             for d in data_dimn_list:
                 data_config["d"] = d
                 for n in data_size_list:
@@ -162,35 +162,35 @@ if __name__ == "__main__":
                                        index=False)
 
     # quick visual of var importance MSE by dimension
-    f_name = "barron"
-    exp_records_plot = exp_records[exp_records.f == f_name]
-    exp_records_plot = exp_records_plot.sort_values(by='d')
-    exp_records_plot = exp_records_plot[exp_records_plot.d != 25]
+    for d_type in data_type_list:
+        exp_records_plot = exp_records[exp_records.f == d_type]
+        exp_records_plot = exp_records_plot.sort_values(by='d')
+        exp_records_plot = exp_records_plot[exp_records_plot.d != 25]
 
-    plt.figure(figsize=(10, 8))
-    for dim_value in exp_records_plot["d"].unique():
-        dim_data = exp_records_plot[exp_records_plot.d == dim_value]
-        dim_data_mean = dim_data.groupby('n').mean()
-        plt.plot(dim_data_mean.var_imp_mse)
+        plt.figure(figsize=(10, 8))
+        for dim_value in exp_records_plot["d"].unique():
+            dim_data = exp_records_plot[exp_records_plot.d == dim_value]
+            dim_data_mean = dim_data.groupby('n').mean()
+            plt.plot(dim_data_mean.var_imp_mse)
 
-    plt.legend(exp_records_plot["d"].unique(), loc='upper right')
-    plt.title("Variable Importance MSE v.s. Sample Size", fontsize=16)
-    plt.xlabel('n', fontsize=16)
-    plt.ylabel('Variable Importance MSE', fontsize=16)
-    # plt.ylim((0, 5))
-    plt.savefig("learning_var_imp_{}.png".format(f_name))
-    plt.close()
+        plt.legend(exp_records_plot["d"].unique(), loc='upper right')
+        plt.title("Variable Importance MSE v.s. Sample Size", fontsize=16)
+        plt.xlabel('n', fontsize=16)
+        plt.ylabel('Variable Importance MSE', fontsize=16)
+        # plt.ylim((0, 5))
+        plt.savefig("learning_var_imp_{}.png".format(d_type))
+        plt.close()
 
-    plt.figure(figsize=(10, 8))
-    for dim_value in exp_records_plot["d"].unique():
-        dim_data = exp_records_plot[exp_records_plot.d == dim_value]
-        dim_data_mean = dim_data.groupby('n').median()
-        plt.plot(dim_data_mean.pred_mse)
+        plt.figure(figsize=(10, 8))
+        for dim_value in exp_records_plot["d"].unique():
+            dim_data = exp_records_plot[exp_records_plot.d == dim_value]
+            dim_data_mean = dim_data.groupby('n').median()
+            plt.plot(dim_data_mean.pred_mse)
 
-    plt.legend(exp_records_plot["d"].unique(), loc='upper right')
-    plt.title("Prediction MSE v.s. Sample Size", fontsize=16)
-    plt.xlabel('n', fontsize=16)
-    plt.ylabel('Prediction MSE', fontsize=16)
-    # plt.ylim((0, 5))
-    plt.savefig("learning_pred_{}.png".format(f_name))
-    plt.close()
+        plt.legend(exp_records_plot["d"].unique(), loc='upper right')
+        plt.title("Prediction MSE v.s. Sample Size", fontsize=16)
+        plt.xlabel('n', fontsize=16)
+        plt.ylabel('Prediction MSE', fontsize=16)
+        # plt.ylim((0, 5))
+        plt.savefig("learning_pred_{}.png".format(d_type))
+        plt.close()

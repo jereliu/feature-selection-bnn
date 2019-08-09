@@ -11,8 +11,7 @@ import util.dtype as dtype_util
 AVAIL_DATA_TYPE = ["linear", "barron", "sobolev"]
 
 
-def generate_noiseless_data(X, d_true,
-                            data_type,
+def generate_noiseless_data(X, d_true, data_type,
                             random_seed=100):
     """A Linear Function to generates toy data for training.
 
@@ -50,12 +49,14 @@ def generate_noiseless_data(X, d_true,
             raise ValueError("Barron class function only supports d_true=5.")
 
         f = (10 * tf.sin(tf.reduce_max(x[:, :2], axis=1)) +
-             tf.reduce_max(x[:, 2:5]) ** 3) / (1 + (x[:, 0] + x[:, 4]) ** 2) + \
+             tf.exp(x[:, 1])) / (1 + (x[:, 0] + x[:, 4]) ** 2) + \
             tf.sin(0.5 * x[:, 2]) * (1 + tf.exp(x[:, 3] - 0.5 * x[:, 2])) + \
             x[:, 2] ** 2 + 2 * tf.sin(x[:, 3]) + 2 * x[:, 4]
     elif data_type == "sobolev":
-        sobolev_kernel = tfk.MaternThreeHalves(amplitude=1, length_scale=.1)
-        sobolev_mat = sobolev_kernel.matrix(x[:, :d_true], x[:, :d_true])
+        sobolev_kernel = tfk.MaternOneHalf(amplitude=1.,
+                                           length_scale=1.)
+        x2 = tf.stop_gradient(x[:, :d_true])
+        sobolev_mat = sobolev_kernel.matrix(x[:, :d_true], x2)
 
         alpha = np.random.normal(size=n).astype(dtype_util.NP_DTYPE)
         f = tf.tensordot(sobolev_mat, alpha, axes=1)
