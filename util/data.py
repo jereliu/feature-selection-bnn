@@ -48,13 +48,18 @@ def generate_noiseless_data(X, d_true, data_type,
         if not d_true == 5:
             raise ValueError("Barron class function only supports d_true=5.")
 
-        f = (10 * tf.sin(tf.reduce_max(x[:, :2], axis=1)) +
-             tf.exp(x[:, 1])) / (1 + (x[:, 0] + x[:, 4]) ** 2) + \
+        f = (5 * tf.sin(tf.reduce_max(x[:, :2], axis=1)) +
+             tf.atan(x[:, 1])) / (1 + (x[:, 0] + x[:, 4]) ** 2) + \
             tf.sin(0.5 * x[:, 2]) * (1 + tf.exp(x[:, 3] - 0.5 * x[:, 2])) + \
             x[:, 2] ** 2 + 2 * tf.sin(x[:, 3]) + 2 * x[:, 4]
+        # f = (10 * tf.sin(tf.reduce_max(x[:, :2], axis=1)) +
+        #      tf.exp(x[:, 1])) / (1 + (x[:, 0] + x[:, 4]) ** 2) + \
+        #     tf.sin(0.5 * x[:, 2]) * (1 + tf.exp(x[:, 3] - 0.5 * x[:, 2])) + \
+        #     x[:, 2] ** 2 + 2 * tf.sin(x[:, 3]) + 2 * x[:, 4]
+
     elif data_type == "sobolev":
         sobolev_kernel = tfk.MaternOneHalf(amplitude=1.,
-                                           length_scale=1.)
+                                           length_scale=.8)
         x2 = tf.stop_gradient(x[:, :d_true])
         sobolev_mat = sobolev_kernel.matrix(x[:, :d_true], x2)
 
@@ -148,7 +153,8 @@ def generate_data(n=1000, n_test=1000,
     X_train = X[:n, :]
     y_train = y[:n]
 
-    X_test = X[n + 1:, :]
-    f_test = f[(n + 1):]
+    X_test = X[n:, :]
+    f_train = f[:n]
+    f_test = f[n:]
 
-    return y_train, X_train, f_test, X_test, var_imp
+    return y_train, X_train, f_train, f_test, X_test, var_imp
