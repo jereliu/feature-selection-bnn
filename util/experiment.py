@@ -36,14 +36,16 @@ def run_experiment(data_config, model_config, mcmc_config,
             estimation.
     """
     # generate training data
-    print("Data: n={}, p={}, f={}".format(data_config["n"], data_config["d"],
-                                          data_config["data_type"]))
+    print("Data: n={}, d={}, d_true={}, f={}".format(
+        data_config["n"], data_config["d"],
+        data_config["d_true"], data_config["data_type"]))
     (y_train, X_train, f_train,
      f_test, X_test, true_var_imp) = data_util.generate_data(**data_config)
 
     # 1. Build Model and Inference Graph ################
-    print("Model: k={}, l={}".format(model_config["n_node"],
-                                     model_config["n_layer"]))
+    print("Model: k={}, l={}, sd=({:.3f}, {:.3f})".format(
+        model_config["n_node"], model_config["n_layer"],
+        model_config["hidden_weight_sd"], model_config["output_weight_sd"]))
     (param_samples, is_accepted, param_names,
      model_fn, mcmc_graph) = make_bnn_graph(X_train, y_train,
                                             **mcmc_config,
@@ -62,9 +64,11 @@ def run_experiment(data_config, model_config, mcmc_config,
                                            sample_bias=sample_bias)
     selected_set = set()
     if sample_bias:
-        selected_set = np.where(np.quantile(imp_sample - bias_sample,
-                                            q=.025, axis=0) > 0)[0]
-        selected_set = set(selected_set)
+        imp_sample_centered = imp_sample - bias_sample
+        # compute confidence threshold
+        q = 0.1
+        q_marg = np.quantile(imp_sample_centered, q=q/2, axis=0)
+        selected_set = set(np.where(q_marg > 0)[0])
 
     # 4. Evaluation Metric ################
     # 4.1. learning variable importance
@@ -90,13 +94,29 @@ def run_experiment(data_config, model_config, mcmc_config,
         fn_set = true_pos_set.difference(selected_set)
         fp_set = selected_set.difference(true_pos_set)
 
-        precision = len(tp_set)/(len(tp_set) + len(fp_set))
-        recall = len(tp_set)/(len(tp_set) + len(fn_set))
-        specificity = len(tn_set)/(len(tn_set) + len(fp_set))
+        if (len(tp_set) + len(fp_set))>0:
+            precision = len(tp_set)/(len(tp_set) + len(fp_set))
+        else:
+            precision = 0.
+
+        if (len(tp_set) + len(fn_set))>0:
+            recall = len(tp_set)/(len(tp_set) + len(fn_set))
+        else:
+            recall = 0.
+
+        if (len(tn_set) + len(fp_set)) > 0:
+            specificity = len(tn_set)/(len(tn_set) + len(fp_set))
+        else:
+            specificity = 0.
+
+        if precision > 0 and recall > 0:
+            f1 = 2 * precision * recall / (precision + recall)
+        else:
+            f1 = 0
 
         print("Precision: {:4f}".format(precision))
         print("Recall: {:4f}".format(recall))
-        print("Specificity: {:4f}".format(specificity))
+        print("F1: {:4f}".format(f1))
 
     # 4. Model Fit Visual ################
     plot_and_save(visual_util.plot_var_imp, logdir,
@@ -106,7 +126,9 @@ def run_experiment(data_config, model_config, mcmc_config,
                   true_var_imp=true_var_imp,
                   n_variable=np.min((50, data_config["d"])))
 
-    return pred_mse, var_imp_mse, precision, recall, specificity
+    return (pred_mse, var_imp_mse,
+            precision, recall, specificity, f1,
+            selected_set, imp_sample_centered)
 
 
 def make_bnn_graph(X, y, num_sample, num_burnin, **bnn_kwargs):
